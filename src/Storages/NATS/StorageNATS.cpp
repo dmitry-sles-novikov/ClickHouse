@@ -504,10 +504,20 @@ NATSConsumerPtr StorageNATS::popConsumer(std::chrono::milliseconds timeout)
 
 NATSConsumerPtr StorageNATS::createConsumer()
 {
-    return std::make_shared<NATSConsumer>(
-        connection, *this, subjects,
-        nats_settings->nats_queue_group.changed ? nats_settings->nats_queue_group.value : getStorageID().getFullTableName(),
-        log, queue_size, shutdown_called);
+    auto stream_name = getContext()->getMacros()->expand(nats_settings->nats_stream);
+    if(stream_name.empty()){
+        return std::make_shared<NATSConsumer>(
+            connection, *this, subjects,
+            nats_settings->nats_queue_group.changed ? nats_settings->nats_queue_group.value : getStorageID().getFullTableName(),
+            log, queue_size, shutdown_called);
+    }
+    else{
+        return std::make_shared<NATSConsumer>(
+            connection, *this, subjects,
+            nats_settings->nats_queue_group.changed ? nats_settings->nats_queue_group.value : getStorageID().getFullTableName(),
+            log, queue_size, shutdown_called);
+    }
+
 }
 
 bool StorageNATS::isSubjectInSubscriptions(const std::string & subject)

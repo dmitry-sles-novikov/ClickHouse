@@ -17,7 +17,7 @@ namespace Loop
     static const UInt8 STOP = 2;
 }
 
-using SubscriptionPtr = std::unique_ptr<natsSubscription, decltype(&natsSubscription_Destroy)>;
+using NATSSubscriptionPtr = std::unique_ptr<natsSubscription, decltype(&natsSubscription_Destroy)>;
 using LockPtr = std::unique_ptr<std::lock_guard<std::mutex>>;
 
 class NATSHandler
