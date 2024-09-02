@@ -10,10 +10,12 @@ class ASTStorage;
 
 #define NATS_RELATED_SETTINGS(M, ALIAS) \
     M(String, nats_url, "", "A host-port to connect to NATS server.", 0) \
+    M(String, nats_stream, "", "A stream name for NATS Jetsream", 0) \
     M(String, nats_subjects, "", "List of subject for NATS table to subscribe/publish to.", 0) \
     M(String, nats_format, "", "The message format.", 0) \
     M(String, nats_schema, "", "Schema identifier (used by schema-based formats) for NATS engine", 0) \
     M(UInt64, nats_num_consumers, 1, "The number of consumer channels per table.", 0) \
+    M(String, nats_consumer, "", "Name of a durable consumer for NATS JetStream", 0) \
     M(String, nats_queue_group, "", "Name for queue group of NATS subscribers.", 0) \
     M(Bool, nats_secure, false, "Use SSL connection", 0) \
     M(UInt64, nats_max_reconnect, 5, "Maximum amount of reconnection attempts.", 0) \
