@@ -13,6 +13,7 @@
 #include <Processors/QueryPlan/QueryPlan.h>
 #include <Storages/NATS/NATSSource.h>
 #include <Storages/NATS/StorageNATS.h>
+#include <Storages/NATS/NATSJetStreamConsumer.h>
 #include <Storages/NATS/NATSProducer.h>
 #include <Storages/MessageQueueSink.h>
 #include <Storages/StorageFactory.h>
@@ -505,11 +506,13 @@ NATSConsumerPtr StorageNATS::popConsumer(std::chrono::milliseconds timeout)
 NATSConsumerPtr StorageNATS::createConsumer()
 {
     auto stream_name = getContext()->getMacros()->expand(nats_settings->nats_stream);
-    if(stream_name.empty()){
-        return std::make_shared<NATSConsumer>(
-            connection, *this, subjects,
-            nats_settings->nats_queue_group.changed ? nats_settings->nats_queue_group.value : getStorageID().getFullTableName(),
-            log, queue_size, shutdown_called);
+    if(!stream_name.empty())
+    {
+        auto consumer_name = getContext()->getMacros()->expand(nats_settings->nats_consumer);
+        return std::make_shared<NATSJetStreamConsumer>(
+            connection, *this, stream_name,
+            consumer_name.empty()? std::nullopt : std::make_optional(consumer_name),
+            subjects, log, queue_size, shutdown_called);
     }
     else{
         return std::make_shared<NATSConsumer>(
