@@ -1,4 +1,4 @@
-#include <Storages/NATS/NATSProducer.h>
+#include <Storages/NATS/INATSProducer.h>
 
 #include <atomic>
 #include <chrono>
@@ -19,7 +19,7 @@ namespace ErrorCodes
     extern const int LOGICAL_ERROR;
 }
 
-NATSProducer::NATSProducer(
+INATSProducer::INATSProducer(
     const NATSConfiguration & configuration_,
     const String & subject_,
     std::atomic<bool> & shutdown_called_,
@@ -32,25 +32,25 @@ NATSProducer::NATSProducer(
 {
 }
 
-void NATSProducer::initialize()
+void INATSProducer::initialize()
 {
     if (!connection.connect())
         throw Exception(ErrorCodes::CANNOT_CONNECT_NATS, "Cannot connect to NATS {}", connection.connectionInfoForLog());
 }
 
-void NATSProducer::finishImpl()
+void INATSProducer::finishImpl()
 {
     connection.disconnect();
 }
 
 
-void NATSProducer::produce(const String & message, size_t, const Columns &, size_t)
+void INATSProducer::produce(const String & message, size_t, const Columns &, size_t)
 {
     if (!payloads.push(message))
         throw Exception(ErrorCodes::LOGICAL_ERROR, "Could not push to payloads queue");
 }
 
-void NATSProducer::publish()
+void INATSProducer::publish()
 {
     uv_thread_t flush_thread;
 
@@ -60,9 +60,9 @@ void NATSProducer::publish()
     uv_thread_join(&flush_thread);
 }
 
-void NATSProducer::publishThreadFunc(void * arg)
+void INATSProducer::publishThreadFunc(void * arg)
 {
-    NATSProducer * producer = static_cast<NATSProducer *>(arg);
+    INATSProducer * producer = static_cast<INATSProducer *>(arg);
     String payload;
 
     natsStatus status;
@@ -90,12 +90,12 @@ void NATSProducer::publishThreadFunc(void * arg)
     nats_ReleaseThreadMemory();
 }
 
-void NATSProducer::stopProducingTask()
+void INATSProducer::stopProducingTask()
 {
     payloads.finish();
 }
 
-void NATSProducer::startProducingTaskLoop()
+void INATSProducer::startProducingTaskLoop()
 {
     try
     {
@@ -118,7 +118,7 @@ void NATSProducer::startProducingTaskLoop()
 }
 
 
-void NATSProducer::iterateEventLoop()
+void INATSProducer::iterateEventLoop()
 {
     connection.getHandler().iterateLoop();
 }

@@ -14,7 +14,7 @@
 #include <Storages/NATS/NATSSource.h>
 #include <Storages/NATS/StorageNATS.h>
 #include <Storages/NATS/NATSJetStreamConsumer.h>
-#include <Storages/NATS/NATSProducer.h>
+#include <Storages/NATS/INATSProducer.h>
 #include <Storages/MessageQueueSink.h>
 #include <Storages/StorageFactory.h>
 #include <Storages/StorageMaterializedView.h>
@@ -405,7 +405,7 @@ SinkToStoragePtr StorageNATS::write(const ASTPtr &, const StorageMetadataPtr & m
     if (!isSubjectInSubscriptions(subject))
         throw Exception(ErrorCodes::BAD_ARGUMENTS, "Selected subject is not among engine subjects");
 
-    auto producer = std::make_unique<NATSProducer>(configuration, subject, shutdown_called, log);
+    auto producer = std::make_unique<INATSProducer>(configuration, subject, shutdown_called, log);
     size_t max_rows = max_rows_per_message;
     /// Need for backward compatibility.
     if (format_name == "Avro" && local_context->getSettingsRef().output_format_avro_rows_in_file.changed)

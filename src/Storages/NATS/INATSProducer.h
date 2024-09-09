@@ -13,10 +13,10 @@
 namespace DB
 {
 
-class NATSProducer : public AsynchronousMessageProducer
+class INATSProducer : public AsynchronousMessageProducer
 {
 public:
-    NATSProducer(
+    INATSProducer(
         const NATSConfiguration & configuration_,
         const String & subject_,
         std::atomic<bool> & shutdown_called_,
