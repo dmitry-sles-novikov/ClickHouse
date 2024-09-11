@@ -24,8 +24,7 @@ NATSConsumer::NATSConsumer(
     LoggerPtr log_,
     uint32_t queue_size_,
     const std::atomic<bool> & stopped_)
-    : INATSConsumer(std::move(connection_), storage_, subjects_, std::move(log_), queue_size_, stopped_)
-    , queue_name(subscribe_queue_name)
+    : INATSConsumer(std::move(connection_), storage_, subjects_,  subscribe_queue_name, std::move(log_), queue_size_, stopped_)
 {
 }
 
@@ -40,7 +39,7 @@ void NATSConsumer::subscribe()
     for (const auto & subject : getSubjects())
     {
         natsSubscription * ns;
-        auto status = natsConnection_QueueSubscribe(&ns, getNativeConnection(), subject.c_str(), queue_name.c_str(), onMsg, static_cast<void *>(this));
+        auto status = natsConnection_QueueSubscribe(&ns, getNativeConnection(), subject.c_str(), getQueueName().c_str(), onMsg, static_cast<void *>(this));
         if (status == NATS_OK)
         {
             LOG_DEBUG(getLogger(), "Subscribed to subject {}", subject);

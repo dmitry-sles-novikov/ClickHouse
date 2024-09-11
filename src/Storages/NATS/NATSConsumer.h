@@ -31,8 +31,6 @@ public:
     size_t subjectsCount() { return getSubjects().size(); }
 
 private:
-    String queue_name;
-
     String channel_id;
 };
 

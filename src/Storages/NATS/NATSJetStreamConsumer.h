@@ -23,6 +23,7 @@ public:
         String stream_name_,
         std::optional<String> consumer_name_,
         const std::vector<String> & subjects_,
+        const String & subscribe_queue_name,
         LoggerPtr log_,
         uint32_t queue_size_,
         const std::atomic<bool> & stopped_);

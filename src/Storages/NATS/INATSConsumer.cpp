@@ -20,12 +20,14 @@ INATSConsumer::INATSConsumer(
     std::shared_ptr<NATSConnectionManager> connection_,
     StorageNATS & storage_,
     const std::vector<String> & subjects_,
+    const String & subscribe_queue_name,
     LoggerPtr log_,
     uint32_t queue_size_,
     const std::atomic<bool> & stopped_)
     : connection(std::move(connection_))
     , storage(storage_)
     , subjects(subjects_)
+    , queue_name(subscribe_queue_name)
     , log(std::move(log_))
     , received(queue_size_)
     , stopped(stopped_)

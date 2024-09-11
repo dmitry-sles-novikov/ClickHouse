@@ -26,6 +26,7 @@ public:
         std::shared_ptr<NATSConnectionManager> connection_,
         StorageNATS & storage_,
         const std::vector<String> & subjects_,
+        const String & subscribe_queue_name,
         LoggerPtr log_,
         uint32_t queue_size_,
         const std::atomic<bool> & stopped_);
@@ -51,6 +52,7 @@ protected:
     natsConnection * getNativeConnection(){return connection->getConnection();}
 
     const std::vector<String> & getSubjects() const{return subjects;}
+    const String & getQueueName() const{return queue_name;}
     const LoggerPtr & getLogger() const{return log;}
 
     static void onMsg(natsConnection * nc, natsSubscription * sub, natsMsg * msg, void * consumer);
@@ -62,6 +64,7 @@ private:
     std::shared_ptr<NATSConnectionManager> connection;
     StorageNATS & storage;
     const std::vector<String> subjects;
+    const String queue_name;
     std::vector<NATSSubscriptionPtr> subscriptions;
     LoggerPtr log;
 

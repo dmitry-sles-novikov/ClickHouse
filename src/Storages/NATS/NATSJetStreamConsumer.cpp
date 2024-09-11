@@ -21,10 +21,11 @@ NATSJetStreamConsumer::NATSJetStreamConsumer(
     String stream_name_,
     std::optional<String> consumer_name_,
     const std::vector<String> & subjects_,
+    const String & subscribe_queue_name,
     LoggerPtr log_,
     uint32_t queue_size_,
     const std::atomic<bool> & stopped_)
-    : INATSConsumer(std::move(connection_), storage_, subjects_, std::move(log_), queue_size_, stopped_)
+    : INATSConsumer(std::move(connection_), storage_, subjects_, subscribe_queue_name, std::move(log_), queue_size_, stopped_)
     , stream_name(std::move(stream_name_))
     , consumer_name(std::move(consumer_name_))
     , jet_stream_ctx(nullptr, &jsCtx_Destroy)
@@ -66,6 +67,7 @@ void NATSJetStreamConsumer::subscribe()
     if(consumer_name){
         subscribe_options.Consumer = consumer_name->c_str();
     }
+    subscribe_options.Queue = getQueueName().c_str();
 
     std::vector<NATSSubscriptionPtr> subscriptions;
     subscriptions.reserve(getSubjects().size());
