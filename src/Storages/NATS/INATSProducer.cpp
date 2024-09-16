@@ -16,7 +16,6 @@ static const auto MAX_BUFFERED = 131072;
 namespace ErrorCodes
 {
     extern const int CANNOT_CONNECT_NATS;
-    extern const int LOGICAL_ERROR;
 }
 
 INATSProducer::INATSProducer(
@@ -30,12 +29,6 @@ INATSProducer::INATSProducer(
     , shutdown_called(shutdown_called_)
     , payloads(BATCH)
 {
-}
-
-void INATSProducer::initialize()
-{
-    if (!connection.connect())
-        throw Exception(ErrorCodes::CANNOT_CONNECT_NATS, "Cannot connect to NATS {}", connection.connectionInfoForLog());
 }
 
 void INATSProducer::finishImpl()
@@ -68,15 +61,14 @@ void INATSProducer::publishThreadFunc(void * arg)
     natsStatus status;
     while (!producer->payloads.empty())
     {
-        if (natsConnection_Buffered(producer->connection.getConnection()) > MAX_BUFFERED)
+        if (natsConnection_Buffered(producer->getNativeConnection()) > MAX_BUFFERED)
             break;
         bool pop_result = producer->payloads.pop(payload);
 
         if (!pop_result)
             throw Exception(ErrorCodes::LOGICAL_ERROR, "Could not pop payload");
 
-        status = natsConnection_Publish(producer->connection.getConnection(), producer->subject.c_str(), payload.c_str(), static_cast<int>(payload.size()));
-
+        status = producer->publishMessage(payload);
         if (status != NATS_OK)
         {
             LOG_DEBUG(producer->log, "Something went wrong during publishing to NATS subject. Nats status text: {}. Last error message: {}",
@@ -99,7 +91,7 @@ void INATSProducer::startProducingTaskLoop()
 {
     try
     {
-        while ((!payloads.isFinishedAndEmpty() || natsConnection_Buffered(connection.getConnection()) != 0) && !shutdown_called.load())
+        while ((!payloads.isFinishedAndEmpty() || natsConnection_Buffered(getNativeConnection()) != 0) && !shutdown_called.load())
         {
             publish();
 

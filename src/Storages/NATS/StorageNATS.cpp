@@ -14,7 +14,8 @@
 #include <Storages/NATS/NATSSource.h>
 #include <Storages/NATS/StorageNATS.h>
 #include <Storages/NATS/NATSJetStreamConsumer.h>
-#include <Storages/NATS/INATSProducer.h>
+#include <Storages/NATS/NATSJetStreamProducer.h>
+#include <Storages/NATS/NATSProducer.h>
 #include <Storages/MessageQueueSink.h>
 #include <Storages/StorageFactory.h>
 #include <Storages/StorageMaterializedView.h>
@@ -405,7 +406,7 @@ SinkToStoragePtr StorageNATS::write(const ASTPtr &, const StorageMetadataPtr & m
     if (!isSubjectInSubscriptions(subject))
         throw Exception(ErrorCodes::BAD_ARGUMENTS, "Selected subject is not among engine subjects");
 
-    auto producer = std::make_unique<INATSProducer>(configuration, subject, shutdown_called, log);
+    auto producer = createProducer(subject);
     size_t max_rows = max_rows_per_message;
     /// Need for backward compatibility.
     if (format_name == "Avro" && local_context->getSettingsRef().output_format_avro_rows_in_file.changed)
@@ -469,7 +470,7 @@ void StorageNATS::shutdown(bool /* is_drop */)
     }
 }
 
-void StorageNATS::pushConsumer(NATSConsumerPtr consumer)
+void StorageNATS::pushConsumer(INATSConsumerPtr consumer)
 {
     std::lock_guard lock(consumers_mutex);
     consumers.push_back(consumer);
@@ -477,13 +478,13 @@ void StorageNATS::pushConsumer(NATSConsumerPtr consumer)
 }
 
 
-NATSConsumerPtr StorageNATS::popConsumer()
+INATSConsumerPtr StorageNATS::popConsumer()
 {
     return popConsumer(std::chrono::milliseconds::zero());
 }
 
 
-NATSConsumerPtr StorageNATS::popConsumer(std::chrono::milliseconds timeout)
+INATSConsumerPtr StorageNATS::popConsumer(std::chrono::milliseconds timeout)
 {
     // Wait for the first free consumer
     if (timeout == std::chrono::milliseconds::zero())
@@ -503,22 +504,34 @@ NATSConsumerPtr StorageNATS::popConsumer(std::chrono::milliseconds timeout)
 }
 
 
-NATSConsumerPtr StorageNATS::createConsumer()
+INATSConsumerPtr StorageNATS::createConsumer()
 {
     auto stream_name = getContext()->getMacros()->expand(nats_settings->nats_stream);
+    auto queue_name = nats_settings->nats_queue_group.changed ? nats_settings->nats_queue_group.value : getStorageID().getFullTableName();
     if(!stream_name.empty())
     {
         auto consumer_name = getContext()->getMacros()->expand(nats_settings->nats_consumer);
         return std::make_shared<NATSJetStreamConsumer>(
             connection, *this, stream_name,
             consumer_name.empty()? std::nullopt : std::make_optional(consumer_name),
-            subjects, log, queue_size, shutdown_called);
+            subjects, queue_name, log, queue_size, shutdown_called);
     }
     else{
         return std::make_shared<NATSConsumer>(
-            connection, *this, subjects,
-            nats_settings->nats_queue_group.changed ? nats_settings->nats_queue_group.value : getStorageID().getFullTableName(),
+            connection, *this, subjects, queue_name,
             log, queue_size, shutdown_called);
+    }
+
+}
+INATSProducerPtr StorageNATS::createProducer(const std::string & subject)
+{
+    auto stream_name = getContext()->getMacros()->expand(nats_settings->nats_stream);
+    if(!stream_name.empty())
+    {
+        return std::make_unique<NATSJetStreamProducer>(configuration, subject, shutdown_called, log);
+    }
+    else{
+        return std::make_unique<NATSProducer>(configuration, subject, shutdown_called, log);
     }
 
 }
